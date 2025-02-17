@@ -5,8 +5,8 @@ import Message from "../models/messageModel.js"; // Import Message model
 // Send message function
 export const sendMessage = async (req, res) => {
   try {
-    const senderId = req.user.userId; // Extract sender ID from authenticated user
-    let receiverId = req.params.id.trim(); // Trim to remove unwanted spaces or newlines
+    const senderId = req.user.userId;
+    let receiverId = req.params.id.trim();
 
     // Validate if senderId and receiverId are valid ObjectId
     if (
@@ -45,8 +45,8 @@ export const sendMessage = async (req, res) => {
     // Add the new message to the conversation
     gotConversation.messages.push(newMessage._id);
     await gotConversation.save();
+    // socket io
 
-    // Return the message and success response
     return res.status(201).json({
       message: "Message sent successfully",
       data: newMessage,
@@ -59,8 +59,8 @@ export const sendMessage = async (req, res) => {
 
 export const getMessage = async (req, res) => {
   try {
-    const receiverId = req.params.id.trim(); // Receiver's ID from the URL
-    const senderId = req.user.userId; // Sender's ID from the authenticated user
+    const receiverId = req.params.id.trim();
+    const senderId = req.user.userId;
 
     // Validate ObjectIds to make sure they are in proper format
     if (
@@ -73,8 +73,8 @@ export const getMessage = async (req, res) => {
     // Find the conversation between sender and receiver
     const conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
-    }).populate("messages"); // Populate messages
-    console.log(conversation);
+    }).populate("messages");
+
     // If conversation is not found, return an error response
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
@@ -83,7 +83,7 @@ export const getMessage = async (req, res) => {
     // Return the conversation with populated messages
     return res.status(200).json({
       message: "Conversation retrieved successfully",
-      data: conversation,
+      data: conversation.messages, // Fix: Return the messages array
     });
   } catch (error) {
     console.error("Error in getMessage:", error);
