@@ -4,11 +4,11 @@ import connectDB from "./config/database.js"; // Database connection
 import cookieParser from "cookie-parser";
 import messageRoute from "./routes/messageRoute.js"; // Message routes
 import userRoute from "./routes/userRoutes.js"; // User routes
+import { app, server } from "./socket/socket.js"; // Import app & server from socket.js
 import cors from "cors";
 
 dotenv.config();
 
-const app = express();
 const PORT = process.env.PORT || 2000;
 
 // Middleware for CORS configuration (if front-end is on a different port)
@@ -38,6 +38,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

@@ -21,14 +21,10 @@ const userModel = new mongoose.Schema(
     },
     gender: {
       type: String,
-      enum: ["male", "female", "other"],
+      enum: ["male", "female"],
       required: true,
     },
   },
-  { timestamps: true } 
+  { timestamps: true }
 );
-
-// Create the model from the schema
-const User = mongoose.model("User", userModel);
-
-export default User;
+export const User = mongoose.model("User", userModel);

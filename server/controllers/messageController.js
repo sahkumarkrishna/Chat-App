@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
-import Conversation from "../models/conversationModel.js";
-import Message from "../models/messageModel.js"; // Import Message model
+import { Conversation } from "../models/conversationModel.js";
+import { Message } from "../models/messageModel.js"; // Import Message model
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 // Send message function
 export const sendMessage = async (req, res) => {
@@ -8,7 +9,7 @@ export const sendMessage = async (req, res) => {
     const senderId = req.user.userId;
     let receiverId = req.params.id.trim();
 
-    // Validate if senderId and receiverId are valid ObjectId
+    // Validate ObjectIds
     if (
       !mongoose.Types.ObjectId.isValid(senderId) ||
       !mongoose.Types.ObjectId.isValid(receiverId)
@@ -21,20 +22,19 @@ export const sendMessage = async (req, res) => {
       return res.status(400).json({ error: "Message content is required" });
     }
 
-    // Find existing conversation between sender and receiver
+    // Find or create conversation
     let gotConversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
     });
 
     if (!gotConversation) {
-      // If no conversation exists, create a new one
       gotConversation = await Conversation.create({
         participants: [senderId, receiverId],
         messages: [],
       });
     }
 
-    // Create a new message
+    // Create new message
     const newMessage = await Message.create({
       senderId,
       receiverId,
@@ -42,10 +42,15 @@ export const sendMessage = async (req, res) => {
       conversationId: gotConversation._id,
     });
 
-    // Add the new message to the conversation
+    // Add message to conversation
     gotConversation.messages.push(newMessage._id);
     await gotConversation.save();
-    // socket io
+
+    // Emit message to receiver using socket
+    const receiverSocketId = await getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage); // Send message in real-time to the receiver
+    }
 
     return res.status(201).json({
       message: "Message sent successfully",
@@ -57,12 +62,13 @@ export const sendMessage = async (req, res) => {
   }
 };
 
+// Get messages
 export const getMessage = async (req, res) => {
   try {
     const receiverId = req.params.id.trim();
     const senderId = req.user.userId;
 
-    // Validate ObjectIds to make sure they are in proper format
+    // Validate ObjectIds
     if (
       !mongoose.Types.ObjectId.isValid(senderId) ||
       !mongoose.Types.ObjectId.isValid(receiverId)
@@ -70,20 +76,21 @@ export const getMessage = async (req, res) => {
       return res.status(400).json({ error: "Invalid sender or receiver ID" });
     }
 
-    // Find the conversation between sender and receiver
+    // Find conversation
     const conversation = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
-    }).populate("messages");
+    }).populate({
+      path: "messages",
+      select: "senderId receiverId message createdAt", // Select only required fields
+    });
 
-    // If conversation is not found, return an error response
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
     }
 
-    // Return the conversation with populated messages
     return res.status(200).json({
       message: "Conversation retrieved successfully",
-      data: conversation.messages, // Fix: Return the messages array
+      data: conversation.messages,
     });
   } catch (error) {
     console.error("Error in getMessage:", error);
