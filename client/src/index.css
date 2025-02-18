@@ -1,9 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 body {
-  background: url('/bg.jpg');
+  background: url(../public/bg.avif);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -20,22 +19,19 @@ code {
     monospace;
 }
 
-/* Custom Scrollbar */
+
 ::-webkit-scrollbar {
-  width: 6px;
+  /* Customize the scrollbar width */
+  width:6px;
 }
 
 ::-webkit-scrollbar-track {
+  /* Customize the scrollbar track */
   background-color: aliceblue;
 }
 
 ::-webkit-scrollbar-thumb {
+  /* Customize the scrollbar thumb */
   background: #1b1b1b;
   border-radius: 10px;
-}
-
-/* Cross-browser scrollbar styling */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #1b1b1b aliceblue;
 }

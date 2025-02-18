@@ -1,24 +1,56 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useDispatch } from "react-redux"; // Keep only this line
+import { setAuthUser } from "../redux/userSlice";
+
+const URL = "http://localhost:8080/api/v1/user/login";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
+  const dispatch = useDispatch();
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form Data Submitted:", formData);
+
+    if (!formData.username || !formData.password) {
+      toast.error("Please fill in both fields.");
+      return;
+    }
+
+    try {
+      // Log the data being sent
+      console.log("Submitting login data:", formData);
+
+      const response = await axios.post(URL, formData, {
+        headers: { "Content-Type": "application/json" }, // Ensure correct headers
+      });
+
+      toast.success("Login successful!");
+      navigate("/");
+
+      dispatch(setAuthUser(response.data)); // Dispatch action to set authenticated user
+    } catch (error) {
+      console.error("Login error:", error.response?.data || error.message);
+      toast.error(
+        error.response?.data?.message || "An error occurred during login."
+      );
+    }
+
     setFormData({
-      email: "",
+      username: "",
       password: "",
     });
-    // Add form validation and API call logic here
   };
 
   return (
@@ -26,18 +58,18 @@ const Login = () => {
       <div className="w-full p-6 rounded-lg shadow-md bg-gray-400 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100">
         <h1 className="text-3xl font-bold text-center">Login</h1>
         <form onSubmit={handleSubmit}>
-          {/* Email */}
+          {/* Username */}
           <div>
             <label className="label p-2">
-              <span className="text-base label-text">Email</span>
+              <span className="text-base label-text">Username</span>
             </label>
             <input
               className="w-full input input-bordered h-10 bg-white"
-              type="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              name="username"
+              value={formData.username}
               onChange={handleChange}
-              placeholder="email"
+              placeholder="Username"
               required
             />
           </div>
@@ -53,7 +85,7 @@ const Login = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="password"
+              placeholder="Password"
               required
             />
           </div>

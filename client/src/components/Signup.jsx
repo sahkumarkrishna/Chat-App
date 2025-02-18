@@ -1,30 +1,62 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast"; // Import toast for notifications
+
+const URL = "http://localhost:8080/api/v1/user/register";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
     fullName: "",
-    email: "",
+    username: "",
     password: "",
     confirmPassword: "",
     gender: "",
   });
 
+  const navigate = useNavigate();
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form Data Submitted:", formData);
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match"); // Show error toast
+      return;
+    }
+
+    try {
+      // Send the correct data to the backend
+      const response = await axios.post(URL, {
+        fullName: formData.fullName,
+        username: formData.username, // Ensure 'username' is passed, not email
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        gender: formData.gender,
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message); // Show success toast
+        navigate("/login"); // Redirect to login page
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error during registration"); // Show error toast
+      console.error(
+        "Error during registration:",
+        error.response?.data || error
+      );
+    }
+
     setFormData({
       fullName: "",
-      email: "",
+      username: "",
       password: "",
       confirmPassword: "",
       gender: "",
     });
-    // Add form validation and API call logic here
   };
 
   return (
@@ -48,18 +80,18 @@ const Signup = () => {
             />
           </div>
 
-          {/* Email */}
+          {/* Username */}
           <div>
             <label className="label p-2">
-              <span className="text-base label-text">Email</span>
+              <span className="text-base label-text">Username</span>
             </label>
             <input
               className="w-full input input-bordered h-10 bg-white"
-              type="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              name="username"
+              value={formData.username}
               onChange={handleChange}
-              placeholder="email"
+              placeholder="Username"
               required
             />
           </div>
@@ -75,7 +107,7 @@ const Signup = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="password"
+              placeholder="Password"
               required
             />
           </div>
@@ -91,7 +123,7 @@ const Signup = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="confirmPassword"
+              placeholder="Confirm Password"
               required
             />
           </div>
@@ -124,12 +156,11 @@ const Signup = () => {
             </div>
           </div>
 
-          <p className="text-center my-2 ">
+          <p className="text-center my-2">
             Already have an account? <Link to="/login"> Login </Link>
           </p>
 
           {/* Submit Button */}
-
           <div>
             <button
               type="submit"
